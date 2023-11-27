@@ -49,6 +49,7 @@ jobs:
 
       - name: Dotnet restore
         run: |
+          ls
           cd testingdeploy
           dotnet restore
 
