@@ -51,6 +51,7 @@ jobs:
         run: |
           ls
           cd testingdeploy
+          ls
           dotnet restore
 
       - name: Dotnet clean
