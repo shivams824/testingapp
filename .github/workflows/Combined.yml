@@ -1,0 +1,99 @@
+name: Build and Deploy
+
+env:
+ AZURE_WEBAPP_NAME: pipeline-test-git
+ DOTNET_VERSION: '6.0.x'
+ NODE_VERSION: '16.x'
+
+on:
+ push:
+   branches:
+     - main
+
+jobs:
+ build:
+   runs-on: ubuntu-latest
+
+   steps:
+   - name: Checkout code
+     uses: actions/checkout@v2
+
+   - name: Set up .NET Core
+     uses: actions/setup-dotnet@v1
+     with:
+       dotnet-version: ${{ env.DOTNET_VERSION }}
+
+   - name: Set up Node.js
+     uses: actions/setup-node@v2
+     with:
+       node-version: ${{ env.NODE_VERSION }}
+
+   - name: Install dependencies and build
+     run: |
+       cd frontend
+       npm install 
+
+   - name: List directory contents
+     run: |
+      ls
+      cd Demoapi
+      ls
+       
+  #  - name: dotnet clean
+  #    run: |
+  #     cd Demoapi
+  #     dotnet clean
+
+   - name: dotnet restore
+     run: |
+      cd Demoapi
+      dotnet restore  
+
+   - name: Build .NET Core
+     run: |
+      cd Demoapi
+      dotnet build --configuration Release
+
+   # - name: Run build
+   #   run: |
+   #    ls
+   #    cd frontend
+   #    npm run build
+
+   - name: Publish .NET Core
+     run: |
+      ls
+      cd frontend
+      npm run build
+      cd ../Demoapi
+      ls
+      dotnet publish --configuration Release --output ./publish
+
+   - name: List directory contents
+     run: ls
+
+   - name: Upload artifact for deployment job
+     uses: actions/upload-artifact@v2
+     with:
+       name: .net-app
+       path: ./publish
+
+ deploy:
+   runs-on: ubuntu-latest
+   needs: build
+
+   steps:
+   - name: Download artifact from build job
+     uses: actions/download-artifact@v2
+     with:
+       name: .net-app
+
+   - name: List directory contents
+     run: ls
+
+   - name: Deploy to Azure Web App
+     uses: azure/webapps-deploy@v2
+     with:
+       app-name: ${{ env.AZURE_WEBAPP_NAME }}
+       publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+       package: ./
